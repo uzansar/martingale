@@ -1,0 +1,82 @@
+# ==============================================================================
+# Martingale Exchange — .gitignore
+# ==============================================================================
+
+# CMake & Ninja Build Directories
+build/
+build-*/
+out/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+.ninja_deps
+.ninja_log
+build.ninja
+rules.ninja
+
+# Compiled Object Files & Binaries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+
+# Testing & Coverage Artifacts
+Testing/
+*.gcda
+*.gcno
+*.gcov
+coverage.info
+coverage_html/
+
+# Performance, Profiling & Sanitizers (Linux perf, Valgrind, Heaptrack)
+perf.data
+perf.data.old
+flamegraph*.svg
+vgcore.*
+callgrind.out.*
+massif.out.*
+heaptrack.*
+*.asan
+*.ubsan
+
+# Exchange Data & Simulation Outputs
+*.journal
+*.binlog
+*.parquet
+*.csv
+data/raw/
+data/processed/
+
+# Doxygen Documentation Output
+docs/html/
+docs/latex/
+docs/xml/
+
+# Python Environment & Cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# IDE & OS Metadata
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
