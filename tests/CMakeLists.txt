@@ -14,6 +14,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(martingale_tests
     test_smoke.cpp
     test_types.cpp
+    test_order_trade.cpp
 )
 
 target_link_libraries(martingale_tests
