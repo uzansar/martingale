@@ -67,6 +67,14 @@ public:
         return removed;
     }
 
+    /// Removes and returns the oldest (front) order in O(1) time.
+    Order pop_front() {
+        if (orders_.empty()) {
+            throw std::out_of_range("Cannot pop front of an empty PriceLevel");
+        }
+        return remove_order(orders_.begin());
+    }
+
 private:
     Price price_{kInvalidPrice};
     Quantity total_quantity_{0};

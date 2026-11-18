@@ -16,6 +16,7 @@ add_executable(martingale_tests
     test_types.cpp
     test_order_trade.cpp
     test_price_level.cpp
+    test_order_book.cpp
 )
 
 target_link_libraries(martingale_tests
