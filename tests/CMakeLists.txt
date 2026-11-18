@@ -18,6 +18,7 @@ add_executable(martingale_tests
     test_price_level.cpp
     test_order_book.cpp
     test_matching_engine.cpp
+    test_gateway_multi_instrument.cpp
 )
 
 target_link_libraries(martingale_tests
