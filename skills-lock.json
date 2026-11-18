@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "skills": {
+    "benchmark-optimization-loop": {
+      "source": "affaan-m/ECC",
+      "commit": "3f14a103a8694e51c1df9a806217a6d0b5f7a6f7",
+      "sourceType": "github",
+      "skillPath": "skills/benchmark-optimization-loop/SKILL.md",
+      "computedHash": "e5b73c06cb6f6a9dcfa112fa60f04a1d0a69690e0cd3b6e2e4f5916b47cd5234",
+      "installMode": "copy"
+    },
+    "cpp-coding-standards": {
+      "source": "affaan-m/ECC",
+      "commit": "3f14a103a8694e51c1df9a806217a6d0b5f7a6f7",
+      "sourceType": "github",
+      "skillPath": "skills/cpp-coding-standards/SKILL.md",
+      "computedHash": "324ceea2c562f3eff848d258ba84318caf1e353ccce862e85ab4275486e72f1e",
+      "installMode": "copy"
+    },
+    "cpp-reviewer": {
+      "source": "trevorashley/skills",
+      "commit": "efed7ce75bd94ef4af9e3c8f85614ed3658ee00e",
+      "sourceType": "github",
+      "skillPath": "cpp-reviewer/SKILL.md",
+      "computedHash": "6d5ccc70cd430d5564a6043de32345acab7c46759759d35ec3b162441d5c8655",
+      "installMode": "copy"
+    },
+    "cpp-testing": {
+      "source": "affaan-m/ECC",
+      "commit": "3f14a103a8694e51c1df9a806217a6d0b5f7a6f7",
+      "sourceType": "github",
+      "skillPath": "skills/cpp-testing/SKILL.md",
+      "computedHash": "09d2c32374ed6bdabede7a48b389ef8fc3f9e0b0dc2fa87deacd449fd9b7edf1",
+      "installMode": "copy"
+    },
+    "latency-critical-systems": {
+      "source": "affaan-m/ECC",
+      "commit": "3f14a103a8694e51c1df9a806217a6d0b5f7a6f7",
+      "sourceType": "github",
+      "skillPath": "skills/latency-critical-systems/SKILL.md",
+      "computedHash": "d915145b3afe055757bfd62536a9efcf064ba64fd5cfa3c88bca83349d99a967",
+      "installMode": "copy"
+    },
+    "systematic-debugging": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/systematic-debugging/SKILL.md",
+      "computedHash": "79ff0583175346e39431b0dc713b223edd1bd7a7ea2b6c8b78b2fb9a3fed6782",
+      "installMode": "copy"
+    },
+    "test-driven-development": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/test-driven-development/SKILL.md",
+      "computedHash": "2782702b2cf69ace085ed30d067b6f8bfd2d777ad51770fc5bdae9cb5c1b5c04",
+      "installMode": "copy"
+    },
+    "verification-before-completion": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/verification-before-completion/SKILL.md",
+      "computedHash": "09b0e3a4689c1c38a3b8fc6ef57a1d4165aa33c0013d546dbde9dd348941a319",
+      "installMode": "copy"
+    }
+  }
+}
