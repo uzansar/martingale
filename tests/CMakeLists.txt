@@ -13,6 +13,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(martingale_tests
     test_smoke.cpp
+    test_types.cpp
 )
 
 target_link_libraries(martingale_tests
