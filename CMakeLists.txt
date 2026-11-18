@@ -57,6 +57,7 @@ endif()
 if(MARTINGALE_ENABLE_UBSAN)
     target_compile_options(martingale_options INTERFACE
         -fsanitize=undefined
+        -fno-sanitize-recover=all
         -fno-omit-frame-pointer
     )
     target_link_options(martingale_options INTERFACE
