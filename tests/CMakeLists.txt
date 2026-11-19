@@ -21,6 +21,7 @@ add_executable(martingale_tests
     test_gateway_multi_instrument.cpp
     test_journal_and_market_data.cpp
     test_latency_recorder.cpp
+    test_object_pool_and_flat_book.cpp
 )
 
 target_link_libraries(martingale_tests

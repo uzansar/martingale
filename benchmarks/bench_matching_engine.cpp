@@ -1,4 +1,5 @@
 #include <benchmark/benchmark.h>
+#include <martingale/book/flat_order_book.hpp>
 #include <martingale/book/order_book.hpp>
 #include <martingale/core/order.hpp>
 #include <martingale/core/types.hpp>
@@ -63,18 +64,20 @@ void publish_latency_counters(benchmark::State& state, const LatencyStats& stats
     state.counters["Max_ns"] = benchmark::Counter(static_cast<double>(stats.max_ns));
 }
 
-void BM_OrderBook_AddAndCancel(benchmark::State& state) {
+template <typename BookType>
+void run_add_and_cancel_benchmark(benchmark::State& state) {
     constexpr std::size_t kBatchSize = 1000U;
-    OrderBook book(1U);
+    BookType book(1U);
     OrderId next_id = 1U;
 
     for (auto _ : state) {
         for (std::size_t i = 0U; i < kBatchSize; ++i) {
             const Price price = 10000 + static_cast<Price>(i % 20U);
-            const Order order(next_id, 1U, Side::Buy, OrderType::Limit, price, 100U, next_id);
+            const OrderId oid = 1U + (next_id % 10000U);
+            const Order order(oid, 1U, Side::Buy, OrderType::Limit, price, 100U, next_id);
             bool added = book.add_order(order);
             benchmark::DoNotOptimize(added);
-            auto cancelled = book.cancel_order(next_id);
+            auto cancelled = book.cancel_order(oid);
             benchmark::DoNotOptimize(cancelled);
             ++next_id;
         }
@@ -86,11 +89,12 @@ void BM_OrderBook_AddAndCancel(benchmark::State& state) {
     recorder.reserve(kBatchSize);
     for (std::size_t i = 0U; i < kBatchSize; ++i) {
         const Price price = 10000 + static_cast<Price>(i % 20U);
-        const Order order(next_id, 1U, Side::Buy, OrderType::Limit, price, 100U, next_id);
+        const OrderId oid = 1U + (next_id % 10000U);
+        const Order order(oid, 1U, Side::Buy, OrderType::Limit, price, 100U, next_id);
         recorder.measure([&]() {
             bool added = book.add_order(order);
             benchmark::DoNotOptimize(added);
-            auto cancelled = book.cancel_order(next_id);
+            auto cancelled = book.cancel_order(oid);
             benchmark::DoNotOptimize(cancelled);
         });
         ++next_id;
@@ -98,11 +102,12 @@ void BM_OrderBook_AddAndCancel(benchmark::State& state) {
     publish_latency_counters(state, recorder.compute_stats());
 }
 
-void BM_MatchingEngine_RestingLimitOrders(benchmark::State& state) {
+template <typename EngineType>
+void run_resting_limit_benchmark(benchmark::State& state) {
     constexpr std::size_t kOrderCount = 1000U;
 
     for (auto _ : state) {
-        MatchingEngine engine(1U);
+        EngineType engine(1U);
         for (std::size_t i = 0U; i < kOrderCount; ++i) {
             const Side side = (i % 2U == 0U) ? Side::Buy : Side::Sell;
             const Price price = (side == Side::Buy) ? (9990 - static_cast<Price>(i % 50U))
@@ -117,7 +122,7 @@ void BM_MatchingEngine_RestingLimitOrders(benchmark::State& state) {
 
     LatencyRecorder recorder;
     recorder.reserve(kOrderCount);
-    MatchingEngine engine(1U);
+    EngineType engine(1U);
     for (std::size_t i = 0U; i < kOrderCount; ++i) {
         const Side side = (i % 2U == 0U) ? Side::Buy : Side::Sell;
         const Price price = (side == Side::Buy) ? (9990 - static_cast<Price>(i % 50U))
@@ -131,12 +136,13 @@ void BM_MatchingEngine_RestingLimitOrders(benchmark::State& state) {
     publish_latency_counters(state, recorder.compute_stats());
 }
 
-void BM_MatchingEngine_CrossingLimitOrders(benchmark::State& state) {
+template <typename EngineType>
+void run_crossing_limit_benchmark(benchmark::State& state) {
     constexpr std::size_t kPairCount = 1000U;
 
     for (auto _ : state) {
         state.PauseTiming();
-        MatchingEngine engine(1U);
+        EngineType engine(1U);
         for (std::size_t i = 0U; i < kPairCount; ++i) {
             const Price price = 10000 + static_cast<Price>(i % 25U);
             const OrderId oid = static_cast<OrderId>(i + 1U);
@@ -158,7 +164,7 @@ void BM_MatchingEngine_CrossingLimitOrders(benchmark::State& state) {
 
     LatencyRecorder recorder;
     recorder.reserve(kPairCount);
-    MatchingEngine engine(1U);
+    EngineType engine(1U);
     for (std::size_t i = 0U; i < kPairCount; ++i) {
         const Price price = 10000 + static_cast<Price>(i % 25U);
         const OrderId oid = static_cast<OrderId>(i + 1U);
@@ -177,12 +183,13 @@ void BM_MatchingEngine_CrossingLimitOrders(benchmark::State& state) {
     publish_latency_counters(state, recorder.compute_stats());
 }
 
-void BM_MatchingEngine_MixedWorkload_10k(benchmark::State& state) {
+template <typename EngineType>
+void run_mixed_workload_benchmark(benchmark::State& state) {
     constexpr std::size_t kCommandCount = 10000U;
     const std::vector<SimCommand> commands = generate_mixed_workload(kCommandCount, 42ULL);
 
     for (auto _ : state) {
-        MatchingEngine engine(1U);
+        EngineType engine(1U);
         for (const auto& cmd : commands) {
             if (cmd.is_cancel) {
                 auto cancelled = engine.cancel_order(cmd.cancel_id);
@@ -198,7 +205,7 @@ void BM_MatchingEngine_MixedWorkload_10k(benchmark::State& state) {
 
     LatencyRecorder recorder;
     recorder.reserve(kCommandCount);
-    MatchingEngine engine(1U);
+    EngineType engine(1U);
     for (const auto& cmd : commands) {
         recorder.measure([&]() {
             if (cmd.is_cancel) {
@@ -213,10 +220,42 @@ void BM_MatchingEngine_MixedWorkload_10k(benchmark::State& state) {
     publish_latency_counters(state, recorder.compute_stats());
 }
 
+void BM_OrderBook_AddAndCancel(benchmark::State& state) {
+    run_add_and_cancel_benchmark<OrderBook>(state);
+}
+void BM_FlatOrderBook_AddAndCancel(benchmark::State& state) {
+    run_add_and_cancel_benchmark<FlatOrderBook>(state);
+}
+
+void BM_MatchingEngine_RestingLimitOrders(benchmark::State& state) {
+    run_resting_limit_benchmark<MatchingEngine>(state);
+}
+void BM_FastMatchingEngine_RestingLimitOrders(benchmark::State& state) {
+    run_resting_limit_benchmark<FastMatchingEngine>(state);
+}
+
+void BM_MatchingEngine_CrossingLimitOrders(benchmark::State& state) {
+    run_crossing_limit_benchmark<MatchingEngine>(state);
+}
+void BM_FastMatchingEngine_CrossingLimitOrders(benchmark::State& state) {
+    run_crossing_limit_benchmark<FastMatchingEngine>(state);
+}
+
+void BM_MatchingEngine_MixedWorkload_10k(benchmark::State& state) {
+    run_mixed_workload_benchmark<MatchingEngine>(state);
+}
+void BM_FastMatchingEngine_MixedWorkload_10k(benchmark::State& state) {
+    run_mixed_workload_benchmark<FastMatchingEngine>(state);
+}
+
 BENCHMARK(BM_OrderBook_AddAndCancel);
+BENCHMARK(BM_FlatOrderBook_AddAndCancel);
 BENCHMARK(BM_MatchingEngine_RestingLimitOrders);
+BENCHMARK(BM_FastMatchingEngine_RestingLimitOrders);
 BENCHMARK(BM_MatchingEngine_CrossingLimitOrders);
+BENCHMARK(BM_FastMatchingEngine_CrossingLimitOrders);
 BENCHMARK(BM_MatchingEngine_MixedWorkload_10k);
+BENCHMARK(BM_FastMatchingEngine_MixedWorkload_10k);
 
 }  // namespace
 }  // namespace martingale::benchmarks
