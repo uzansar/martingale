@@ -78,3 +78,7 @@ if(MARTINGALE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+if(MARTINGALE_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif()

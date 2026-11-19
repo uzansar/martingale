@@ -59,6 +59,7 @@ jobs:
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DMARTINGALE_BUILD_TESTS=ON \
+            -DMARTINGALE_BUILD_BENCHMARKS=ON \
             -DMARTINGALE_WARNINGS_AS_ERRORS=ON \
             -DMARTINGALE_ENABLE_ASAN=${{ matrix.asan }} \
             -DMARTINGALE_ENABLE_UBSAN=${{ matrix.ubsan }}
