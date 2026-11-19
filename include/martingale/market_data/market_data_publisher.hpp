@@ -7,6 +7,7 @@
 #include <martingale/core/types.hpp>
 #include <martingale/engine/matching_engine.hpp>
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -16,6 +17,17 @@
 #include <vector>
 
 namespace martingale {
+
+/// Concept constraining any OrderBook implementation consumable by MarketDataPublisher.
+template <typename BookType>
+concept OrderBookLike = requires(const BookType& book, Side side, std::size_t max_levels) {
+    { book.instrument_id() } -> std::same_as<InstrumentId>;
+    { book.best_bid() } -> std::same_as<std::optional<Price>>;
+    { book.best_bid_quantity() } -> std::same_as<Quantity>;
+    { book.best_ask() } -> std::same_as<std::optional<Price>>;
+    { book.best_ask_quantity() } -> std::same_as<Quantity>;
+    { book.get_depth(side, max_levels) } -> std::same_as<std::vector<DepthLevel>>;
+};
 
 /// Types of outbound market data events generated off the matching critical path.
 enum class MarketDataEventType : std::uint8_t {
@@ -70,7 +82,8 @@ public:
 
     /// Publishes OrderAccepted, any resulting TradeExecuted prints, and an L1 BBO
     /// delta update if the top-of-book changed for the instrument.
-    void on_order_processed(const OrderResult& result, const OrderBook& book) {
+    template <OrderBookLike BookType>
+    void on_order_processed(const OrderResult& result, const BookType& book) {
         if (result.final_order.status == OrderStatus::Rejected) {
             return;
         }
@@ -91,7 +104,8 @@ public:
     }
 
     /// Publishes OrderCancelled and emits a BestBidOfferUpdate if top-of-book changed.
-    void on_order_cancelled(const Order& cancelled_order, const OrderBook& book, Timestamp ts) {
+    template <OrderBookLike BookType>
+    void on_order_cancelled(const Order& cancelled_order, const BookType& book, Timestamp ts) {
         const InstrumentId inst = book.instrument_id();
         emit_event(MarketDataEvent{0U, ts, inst, MarketDataEventType::OrderCancelled,
                                    cancelled_order, Trade{}, BboQuote{}});
@@ -99,7 +113,8 @@ public:
     }
 
     /// Captures an L2 depth snapshot up to max_levels and emits a BookSnapshot event.
-    [[nodiscard]] OrderBookSnapshot capture_snapshot(const OrderBook& book, std::size_t max_levels,
+    template <OrderBookLike BookType>
+    [[nodiscard]] OrderBookSnapshot capture_snapshot(const BookType& book, std::size_t max_levels,
                                                      Timestamp ts) {
         const InstrumentId inst = book.instrument_id();
         emit_event(MarketDataEvent{0U, ts, inst, MarketDataEventType::BookSnapshot, Order{},
@@ -132,7 +147,8 @@ private:
         }
     }
 
-    void maybe_emit_bbo_update(const OrderBook& book, Timestamp ts) {
+    template <OrderBookLike BookType>
+    void maybe_emit_bbo_update(const BookType& book, Timestamp ts) {
         const InstrumentId inst = book.instrument_id();
         const BboQuote current{
             .instrument_id = inst,
