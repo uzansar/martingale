@@ -74,6 +74,9 @@ target_include_directories(martingale_core INTERFACE
 target_compile_features(martingale_core INTERFACE cxx_std_20)
 target_link_libraries(martingale_core INTERFACE martingale_options)
 
+add_executable(martingale_experiments src/run_experiments.cpp)
+target_link_libraries(martingale_experiments PRIVATE martingale_core)
+
 if(MARTINGALE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
