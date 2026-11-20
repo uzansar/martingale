@@ -31,13 +31,15 @@ Executing with `--export-dir data/processed` exports four CSV datasets consumed 
 
 ## 2. Quantitative Metric Definitions
 
-For a parent order on side $s \in \{+1\ (\text{Buy}), -1\ (\text{Sell})\}$ arriving at $P_{\text{arrival}}$, achieving volume-weighted average fill price $P_{\text{exec}}$, and settling at terminal post-trade mid $P_{\text{post}}$:
+For a parent order on side `s in {+1 (Buy), -1 (Sell)}` arriving at `P_arrival`, achieving volume-weighted average fill price `P_exec`, and settling at terminal post-trade mid `P_post`:
 
-$$
-\text{Slippage (ticks)} = s \cdot (P_{\text{exec}} - P_{\text{arrival}}) = \underbrace{s \cdot (P_{\text{post}} - P_{\text{arrival}})}_{\text{Permanent Impact}} + \underbrace{s \cdot (P_{\text{exec}} - P_{\text{post}})}_{\text{Temporary Impact}}
-$$
+```text
+Slippage (ticks) = s * (P_exec - P_arrival)
+                 = s * (P_post - P_arrival)  [Permanent Impact]
+                 + s * (P_exec - P_post)     [Temporary Impact]
+```
 
-Basis-point values normalize tick deltas by `arrival_mid`: $(\Delta / P_{\text{arrival}}) \times 10{,}000$. Realized volatility is computed as the sample standard deviation of step-over-step BBO mid-price log returns $\ln(P_t / P_{t-1})$ expressed in basis points.
+Basis-point values normalize tick deltas by `arrival_mid`: `(delta / P_arrival) * 10,000`. Realized volatility is computed as the sample standard deviation of step-over-step BBO mid-price log returns `ln(P_t / P_{t-1})` expressed in basis points.
 
 ---
 
