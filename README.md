@@ -6,19 +6,19 @@
 [![Build System: CMake + Ninja](https://img.shields.io/badge/Build-CMake%20%2B%20Ninja-green.svg)](https://cmake.org/)
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://www.kernel.org/)
 
-> **Progress:** **5 / 6 Milestones Completed** (`#1`–`#21` closed) · **`62 / 62` GoogleTest suites** passing under GCC 15 (`-O3`) and Clang 21 (`Debug + ASan/UBSan`) · Peak **`86.71 M ops/sec`** (`29 ns` P50) on `FlatOrderBook` + `ObjectPool` · Explore the **[Project Wiki](https://github.com/uzansar/martingale/wiki)**.
+> **Progress:** **6 / 6 Milestones Completed** (`#1`–`#24` closed) · **`64 / 64` GoogleTest suites** passing under GCC 15 (`-O3`) and Clang 21 (`Debug + ASan/UBSan`) · **`4 / 4` `pytest` dashboard checks** passing · Zero-warning **Doxygen 1.15** docs · Explore the **[Project Wiki](https://github.com/uzansar/martingale/wiki)**.
 
 ---
 
 ## Overview
 
-**Martingale Exchange** is a deterministic, low-latency simulated electronic exchange, limit order book (LOB), matching engine, synthetic market simulation framework, and quantitative microstructure research platform written in **C++20** (with an upcoming **Python 3 `Polars` + `Plotly`** visual research dashboard in Milestone 6).
+**Martingale Exchange** is a deterministic, low-latency simulated electronic exchange, limit order book (LOB), matching engine, synthetic market simulation framework, and quantitative microstructure research platform written in **C++20** and **Python 3 (`Polars` + `Plotly`)**.
 
 This project is engineered around real-world quantitative trading infrastructure principles:
-- **Deterministic Execution:** Identical ordered input command sequences strictly produce identical trade executions, sequence numbers, and order book states.
+- **Deterministic Execution:** Identical ordered input command sequences strictly produce identical trade executions, sequence numbers, and order book states across both the STL oracle and optimized matching paths.
 - **Exact Tick Arithmetic:** Fixed-point integer prices (`Price = int64_t`) and quantities (`Quantity = uint64_t`) throughout the critical matching path—zero IEEE-754 floating-point rounding ambiguity.
 - **Hardware-Conscious Optimization:** Evolves cleanly from a verified STL baseline (`OrderBook`) to a pre-allocated `ObjectPool<IntrusiveOrderNode>` and contiguous `FlatOrderBook` (`FastMatchingEngine`) guided by Google Benchmark histograms, Callgrind cache/branch simulation, and Heaptrack.
-- **End-to-End Quantitative Pipeline:** Seeded multi-agent market simulations (`MarketSimulator`) routed through the exchange core produce tick-by-tick BBO, execution tape, and L2 snapshot CSV datasets evaluated by `MicrostructureAnalyzer`.
+- **End-to-End Quantitative Pipeline:** Seeded multi-agent market simulations (`MarketSimulator`) routed through the exchange core produce tick-by-tick BBO, execution tape, and L2 snapshot CSV datasets evaluated by `MicrostructureAnalyzer` and visualized via a 6-panel interactive `Polars` + `Plotly` research dashboard.
 
 ---
 
@@ -32,7 +32,8 @@ flowchart LR
     ME <--> OB["Order Book\n(STL Baseline / FlatOrderBook + ObjectPool)"]
     ME --> TM["Trade Management\n(64B Cache-Line Trade Records)"]
     ME --> MDP["Market Data Publisher\n(BBO, Trades, L2 Snapshots)"]
-    MDP --> QR["MicrostructureAnalyzer & Experiments\n(CSV Exports -> Polars + Plotly)"]
+    MDP --> QR["MicrostructureAnalyzer & Experiments\n(CSV Exports)"]
+    QR --> PY["Python Research Dashboard\n(Polars + Plotly Analytics)"]
 ```
 
 ### Core Components
@@ -45,8 +46,8 @@ flowchart LR
 | **Trade Management** | Emits cache-line-aligned (`64 B`) sequenced execution records (`TradeId`, `InstrumentId`, execution price/qty, buyer & seller `OrderId`s). |
 | **Event Journal & Replay** | Sequentially records accepted commands and exchange events in binary `MTGLJRN1` format for deterministic `ReplayEngine` state reconstruction. |
 | **Market Data Publisher** | Publishes order lifecycle events, trade prints, L1 BBO updates (`BboQuote`), and configurable-depth L2 snapshots off the critical path. |
-| **Performance Framework** | Tracks throughput (`ops/sec`) and tail latencies (`Mean`, `P50`, `P90`, `P95`, `P99`, `P99.9`, `Max`) alongside Google Benchmark suites. |
-| **Market Simulator & Quant Research** | Runs deterministic `std::mt19937_64` simulations (`MarketMaker`, `Random`, `Momentum`, `Institutional` agents) and computes spread, OBI, VWAP, realized volatility, liquidity depth, and slippage/impact. |
+| **Performance Framework** | Tracks throughput (`ops/sec`) and tail latencies (`Mean`, `P50`, `P90`, `P95`, `P99`, `P99.9`, `Max`) alongside Google Benchmark JSON exports. |
+| **Market Simulator & Quant Research** | Runs deterministic `std::mt19937_64` simulations (`MarketMaker`, `Random`, `Momentum`, `Institutional` agents), computes microstructure metrics, and feeds the 6-panel `Polars` + `Plotly` dashboard. |
 
 ---
 
@@ -54,7 +55,7 @@ flowchart LR
 
 ### Engine Optimization (`GCC 15.2.0 -O3`, Linux x86_64)
 
-Full report: [`docs/benchmark_comparison.md`](docs/benchmark_comparison.md) · [`docs/benchmark_baseline.md`](docs/benchmark_baseline.md)
+Full reports: [`docs/benchmark_comparison.md`](docs/benchmark_comparison.md) · [`docs/benchmark_baseline.md`](docs/benchmark_baseline.md) · [ADR-005](docs/ADR-005-object-pool-and-flat-order-book.md)
 
 | Workload | STL Baseline | `ObjectPool` + `FlatOrderBook` | P50 Latency | P99 Latency | Speedup |
 | :--- | ---: | ---: | ---: | ---: | ---: |
@@ -64,14 +65,27 @@ Full report: [`docs/benchmark_comparison.md`](docs/benchmark_comparison.md) · [
 | **Mixed 10k Sim** | `7.80 M/s` | **`11.90 M/s`** | `95 ns` → **`62 ns`** | `801 ns` → **`774 ns`** | **`1.53x`** |
 
 - **Callgrind Deltas (`MixedWorkload_10k`):** `-27.0%` instructions, `-28.0%` D1 read misses, `-42.7%` branch mispredictions, and `-85.8%` indirect branch mispredictions.
+- **25k-Command Stress Parity:** `EndToEndStressTest.MultiInstrumentGatewayJournalReplayAndFastEngineParity` verifies exact trade, L2 snapshot, and `MTGLJRN1` binary replay parity across `MatchingEngine` and `FastMatchingEngine` under ASan + UBSan.
 
 ### Microstructure Experiments (`seed = 2026`, `500` steps)
 
-Full report: [`docs/microstructure_experiments.md`](docs/microstructure_experiments.md)
+Full report: [`docs/microstructure_experiments.md`](docs/microstructure_experiments.md) · [ADR-006](docs/ADR-006-seeded-market-simulator-and-decoupled-analytics.md)
 
 - **Institutional Order Size (`100` → `1,500` Buy shares):** Execution slippage scales monotonically from **`15.93 bps`** to **`27.65 bps`** (**`+73.6%`**), with transient execution pressure reaching **`35.67 bps`**.
 - **Market Maker Half-Spread (`1` → `4` ticks):** Mean realized BBO spread widens monotonically (**`2.56`** → **`4.27 bps`**) while traded volume contracts **`9.2%`** (`78,240` → `71,003` shares).
 - **Momentum Participation (`0` → `5` agents):** Induces endogenous volatility clustering—realized volatility surges **`7.0x`** (**`1.55`** → **`10.86 bps`**) with **`+148%`** higher volume and **`+89.5%`** wider spreads.
+
+---
+
+## Documentation & Architecture Decision Records
+
+- [`docs/README.md`](docs/README.md) — Documentation hub and report index
+- [ADR-001: Fixed-Point Arithmetic](docs/ADR-001-fixed-point-arithmetic.md)
+- [ADR-002: STL Baseline Order Book](docs/ADR-002-stl-baseline-order-book.md)
+- [ADR-003: Single-Threaded Deterministic Matching](docs/ADR-003-single-threaded-deterministic-matching.md)
+- [ADR-004: Binary Sequential Event Journal & Replay](docs/ADR-004-binary-event-journal-and-deterministic-replay.md)
+- [ADR-005: Pre-Allocated ObjectPool & FlatOrderBook](docs/ADR-005-object-pool-and-flat-order-book.md)
+- [ADR-006: Seeded Market Simulator & Decoupled Analytics](docs/ADR-006-seeded-market-simulator-and-decoupled-analytics.md)
 
 ---
 
@@ -92,16 +106,17 @@ martingale-exchange/
 │       └── simulator/    # Seeded MarketSimulator & synthetic trading agents
 ├── src/
 │   └── run_experiments.cpp # CLI running parameter sweeps & exporting CSV datasets
-├── tests/                # GoogleTest suite (62 tests across unit, replay & simulation)
+├── tests/                # GoogleTest suite (64 tests across unit, replay, sim & stress)
 ├── benchmarks/           # Google Benchmark suites (STL baseline vs. FastMatchingEngine)
-├── docs/                 # ADRs, benchmark reports & microstructure findings
-├── python/               # Polars + Plotly research dashboard workspace (Milestone 6)
+├── python/               # Polars pipeline (data_pipeline.py), Plotly dashboard & pytest suite
+├── docs/                 # ADR-001..006, benchmark reports & microstructure findings
+├── Doxyfile              # Zero-warning Doxygen HTML documentation configuration
 └── CMakeLists.txt        # Root CMake configuration (C++20, GCC/Clang, ASan/UBSan)
 ```
 
 ---
 
-## Quick Start (Build, Test, Benchmarks & Experiments)
+## Quick Start (Build, Test, Benchmarks, Dashboard & Doxygen)
 
 ```bash
 # 1. Configure & build Release (Tests, Benchmarks, Experiments CLI)
@@ -121,9 +136,21 @@ cmake -B build/clang-san -G Ninja \
 cmake --build build/clang-san
 ctest --test-dir build/clang-san --output-on-failure
 
-# 3. Run Google Benchmarks & Export Microstructure CSV Datasets
-./build/gcc-release/benchmarks/martingale_benchmarks --benchmark_min_time=0.2s
+# 3. Export Google Benchmark JSON & Microstructure CSV Datasets
+./build/gcc-release/benchmarks/martingale_benchmarks \
+  --benchmark_min_time=0.2s \
+  --benchmark_out=data/processed/benchmarks.json \
+  --benchmark_out_format=json
 ./build/gcc-release/martingale_experiments --export-dir data/processed
+
+# 4. Run Python Polars/Plotly Verification Suite & Build Interactive HTML Dashboard
+python -m venv .venv
+.venv/bin/python -m pip install -r python/requirements.txt   # On Windows: .venv\Scripts\python
+.venv/bin/python -m pytest python/test_dashboard.py -v
+.venv/bin/python python/dashboard.py --data-dir data/processed --output data/processed/martingale_dashboard.html
+
+# 5. Build Zero-Warning Doxygen API Reference (outputs to docs/html/index.html)
+doxygen Doxyfile
 ```
 
 ---
@@ -131,9 +158,9 @@ ctest --test-dir build/clang-san --output-on-failure
 ## Technology Stack
 
 - **Core Systems:** C++20, CMake, Ninja, GCC 15 / Clang 21 (Linux)
-- **Testing & Verification:** GoogleTest (`62/62` tests), CTest, AddressSanitizer (ASan), UndefinedBehaviorSanitizer (UBSan), GitHub Actions CI
+- **Testing & Verification:** GoogleTest (`64/64` tests), CTest, AddressSanitizer (ASan), UndefinedBehaviorSanitizer (UBSan), `pytest` (`4/4` tests), GitHub Actions CI
 - **Performance & Profiling:** Google Benchmark, Valgrind (`callgrind`), Heaptrack, `perf stat`
-- **Quantitative Analytics & Visualisation:** `MicrostructureAnalyzer` (C++20 CSV exports), Python 3 / `Polars` / `Plotly` *(Milestone 6)*
+- **Quantitative Analytics & Visualisation:** `MicrostructureAnalyzer` (C++20 CSV exports), Python 3 (`Polars`, `NumPy`, `Plotly`), Doxygen `1.15`
 
 ---
 
@@ -146,4 +173,4 @@ ctest --test-dir build/clang-san --output-on-failure
 | **Milestone 3** | Weeks 5–6 | **Completed** | Multi-instrument routing, `OrderGateway`, binary `EventJournal`, `ReplayEngine`, decoupled `MarketDataPublisher` | `#10` – `#13` |
 | **Milestone 4** | Weeks 7–8 | **Completed** | Google Benchmark suite, latency percentiles, CPU/memory profiling, pre-allocated `ObjectPool` & `FlatOrderBook` | `#14` – `#17` |
 | **Milestone 5** | Weeks 9–10 | **Completed** | Deterministic `MarketSimulator`, synthetic trading agents, `MicrostructureAnalyzer` metrics & reproducible experiments | `#18` – `#21` |
-| **Milestone 6** | Weeks 11–12 | **In Progress** | Python (`Polars` + `Plotly`) interactive dashboard, Doxygen documentation & final end-to-end polish | `#22` – `#24` |
+| **Milestone 6** | Weeks 11–12 | **Completed** | Python (`Polars` + `Plotly`) interactive dashboard, Doxygen `1.15`, ADR-004–006 & 25k-order stress/sanitizer audit | `#22` – `#24` |

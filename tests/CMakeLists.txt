@@ -24,6 +24,7 @@ add_executable(martingale_tests
     test_object_pool_and_flat_book.cpp
     test_market_simulator.cpp
     test_microstructure_metrics.cpp
+    test_end_to_end_stress.cpp
 )
 
 target_link_libraries(martingale_tests
