@@ -5,8 +5,9 @@
 [![Language: C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Build System: CMake + Ninja](https://img.shields.io/badge/Build-CMake%20%2B%20Ninja-green.svg)](https://cmake.org/)
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://www.kernel.org/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7.svg)](https://martingale-exchange.onrender.com/)
 
-> **Progress:** **6 / 6 Milestones Completed** (`#1`–`#24` closed) · **`64 / 64` GoogleTest suites** passing under GCC 15 (`-O3`) and Clang 21 (`Debug + ASan/UBSan`) · **`5 / 5` `pytest` dashboard & web checks** passing · Zero-warning **Doxygen 1.15** docs · Explore the **[Project Wiki](https://github.com/uzansar/martingale/wiki)**.
+> **Live App:** **[https://martingale-exchange.onrender.com/](https://martingale-exchange.onrender.com/)** · **6 / 6 Milestones Completed** (`#1`–`#24` closed) · **`64 / 64` GoogleTest suites** passing under GCC 15 (`-O3`) and Clang 21 (`Debug + ASan/UBSan`) · **`5 / 5` `pytest` checks** passing · Zero-warning **Doxygen 1.15** docs · Explore the **[Project Wiki](https://github.com/uzansar/martingale/wiki)**.
 
 ---
 
@@ -159,7 +160,9 @@ doxygen Doxyfile
 
 ## Live Interactive Web App & Cloud Deployment
 
-Launch an interactive web simulator (`python/app.py`) powered live by the compiled C++20 matching engine (`martingale_experiments --single-run`), `Polars`, and `Plotly`:
+**Live Deployment:** **[https://martingale-exchange.onrender.com/](https://martingale-exchange.onrender.com/)**
+
+Launch the interactive web simulator (`python/app.py`) powered live by the compiled C++20 matching engine (`martingale_experiments --single-run`), `Polars`, and `Plotly`:
 
 ```bash
 # Run locally with Streamlit (invokes native C++ binary, or WSL2 automatically on Windows)
