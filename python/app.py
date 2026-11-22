@@ -22,6 +22,107 @@ DEFAULT_DATA_DIR = Path(
     os.environ.get("MARTINGALE_DATA_DIR", str(PROJECT_ROOT / "data" / "processed"))
 )
 
+_TERMINAL_CSS = """
+<style>
+.block-container {
+    padding-top: 1.35rem;
+    padding-bottom: 1.5rem;
+}
+[data-testid="stSidebar"] > div:first-child {
+    padding-top: 1.1rem;
+}
+.mtgl-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-bottom: 0.65rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #1f2937;
+}
+.mtgl-title {
+    margin: 0;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: #f8fafc;
+}
+.mtgl-subtitle {
+    margin: 0.15rem 0 0 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+.mtgl-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+.mtgl-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.75rem;
+    color: #22d3ee;
+    background: #111827;
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    padding: 0.2rem 0.55rem;
+}
+[data-testid="stMetric"] {
+    background: #111827;
+    border: 1px solid #1f2937;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+[data-testid="stMetricLabel"] {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+[data-testid="stMetricValue"] {
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    color: #f8fafc;
+}
+[data-testid="stMetricDelta"] {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+</style>
+"""
+
+
+def _apply_terminal_layout(
+    fig: go.Figure,
+    title: str,
+    height: int = 410,
+    barmode: str | None = None,
+) -> go.Figure:
+    """Applies unified dark trading-terminal styling to any Plotly figure."""
+    layout_kwargs: dict[str, Any] = {
+        "template": "plotly_dark",
+        "title": dict(text=title, font=dict(size=15, color="#f8fafc"), x=0.0, xanchor="left"),
+        "paper_bgcolor": "rgba(0,0,0,0)",
+        "plot_bgcolor": "rgba(17,24,39,0.55)",
+        "font": dict(color="#e2e8f0", size=12),
+        "hovermode": "x unified",
+        "height": height,
+        "margin": dict(l=52, r=36, t=64, b=46),
+        "legend": dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1.0,
+            bgcolor="rgba(0,0,0,0)",
+        ),
+    }
+    if barmode is not None:
+        layout_kwargs["barmode"] = barmode
+    fig.update_layout(**layout_kwargs)
+    fig.update_xaxes(gridcolor="#1f2937", zerolinecolor="#374151")
+    fig.update_yaxes(gridcolor="#1f2937", zerolinecolor="#374151")
+    return fig
+
 
 def _windows_to_wsl_path(path: Path) -> str:
     resolved = path.resolve()
@@ -116,7 +217,7 @@ def build_price_tape_figure(steps_df: pl.DataFrame, trades_df: pl.DataFrame) -> 
             x=steps_df["time_ms"].to_list(),
             y=steps_df["best_ask"].to_list(),
             name="Best Ask",
-            line=dict(color="rgba(239, 83, 80, 0.50)", width=1),
+            line=dict(color="rgba(248, 113, 113, 0.55)", width=1.1),
             mode="lines",
         )
     )
@@ -125,9 +226,7 @@ def build_price_tape_figure(steps_df: pl.DataFrame, trades_df: pl.DataFrame) -> 
             x=steps_df["time_ms"].to_list(),
             y=steps_df["best_bid"].to_list(),
             name="Best Bid",
-            line=dict(color="rgba(38, 166, 154, 0.50)", width=1),
-            fill="tonexty",
-            fillcolor="rgba(100, 181, 246, 0.08)",
+            line=dict(color="rgba(52, 211, 153, 0.55)", width=1.1),
             mode="lines",
         )
     )
@@ -136,7 +235,7 @@ def build_price_tape_figure(steps_df: pl.DataFrame, trades_df: pl.DataFrame) -> 
             x=steps_df["time_ms"].to_list(),
             y=steps_df["mid_price"].to_list(),
             name="Mid-Price",
-            line=dict(color="#64b5f6", width=2),
+            line=dict(color="#38bdf8", width=2.2),
             mode="lines",
         )
     )
@@ -146,7 +245,7 @@ def build_price_tape_figure(steps_df: pl.DataFrame, trades_df: pl.DataFrame) -> 
                 x=trades_df["time_ms"].to_list(),
                 y=trades_df["running_vwap"].to_list(),
                 name="Running VWAP",
-                line=dict(color="#ffd54f", width=2, dash="dot"),
+                line=dict(color="#facc15", width=2.0, dash="dot"),
                 mode="lines",
             )
         )
@@ -156,29 +255,26 @@ def build_price_tape_figure(steps_df: pl.DataFrame, trades_df: pl.DataFrame) -> 
             go.Scatter(
                 x=buy_trades["time_ms"].to_list(),
                 y=buy_trades["price"].to_list(),
-                name="Buy Aggressor Prints",
+                name="Buy Prints",
                 mode="markers",
-                marker=dict(color="#00e676", size=5, opacity=0.45),
+                marker=dict(color="#10b981", size=4, opacity=0.38),
             )
         )
         fig.add_trace(
             go.Scatter(
                 x=sell_trades["time_ms"].to_list(),
                 y=sell_trades["price"].to_list(),
-                name="Sell Aggressor Prints",
+                name="Sell Prints",
                 mode="markers",
-                marker=dict(color="#ff5252", size=5, opacity=0.45),
+                marker=dict(color="#f43f5e", size=4, opacity=0.38),
             )
         )
 
-    fig.update_layout(
-        template="plotly_dark",
-        title="BBO Envelope, Mid-Price, Running VWAP & Execution Tape",
-        xaxis_title="Simulated Time (ms)",
-        yaxis_title="Price (ticks)",
-        height=440,
-        margin=dict(l=50, r=30, t=55, b=45),
+    _apply_terminal_layout(
+        fig, "BBO Quotes, Mid-Price, Running VWAP & Execution Tape", height=430
     )
+    fig.update_xaxes(title_text="Simulated Time (ms)")
+    fig.update_yaxes(title_text="Price (ticks)")
     return fig
 
 
@@ -190,7 +286,7 @@ def build_spread_obi_figure(steps_df: pl.DataFrame) -> go.Figure:
             x=steps_df["time_ms"].to_list(),
             y=steps_df["spread_bps"].to_list(),
             name="Spread (bps)",
-            line=dict(color="#ab47bc", width=1.8),
+            line=dict(color="#c084fc", width=1.8),
             mode="lines",
         ),
         secondary_y=False,
@@ -200,18 +296,15 @@ def build_spread_obi_figure(steps_df: pl.DataFrame) -> go.Figure:
             x=steps_df["time_ms"].to_list(),
             y=steps_df["rolling_l1_obi"].to_list(),
             name="20-Step Rolling L1 OBI",
-            line=dict(color="#26c6da", width=2),
+            line=dict(color="#22d3ee", width=2.0),
             mode="lines",
         ),
         secondary_y=True,
     )
-    fig.update_layout(
-        template="plotly_dark",
-        title="Realized Spread (bps) & Rolling Level-1 Order Book Imbalance",
-        xaxis_title="Simulated Time (ms)",
-        height=390,
-        margin=dict(l=50, r=50, t=55, b=45),
+    _apply_terminal_layout(
+        fig, "Realized Spread (bps) & Rolling Level-1 Imbalance", height=380
     )
+    fig.update_xaxes(title_text="Simulated Time (ms)")
     fig.update_yaxes(title_text="Spread (bps)", secondary_y=False)
     fig.update_yaxes(title_text="Rolling L1 OBI", range=[-1.0, 1.0], secondary_y=True)
     return fig
@@ -226,7 +319,7 @@ def build_l2_depth_figure(l2_profile: pl.DataFrame) -> go.Figure:
             x=levels,
             y=l2_profile["mean_bid_qty"].to_list(),
             name="Mean Bid Depth",
-            marker_color="#26a69a",
+            marker_color="#10b981",
         )
     )
     fig.add_trace(
@@ -234,18 +327,14 @@ def build_l2_depth_figure(l2_profile: pl.DataFrame) -> go.Figure:
             x=levels,
             y=l2_profile["mean_ask_qty"].to_list(),
             name="Mean Ask Depth",
-            marker_color="#ef5350",
+            marker_color="#f43f5e",
         )
     )
-    fig.update_layout(
-        template="plotly_dark",
-        title="Mean Level-2 Resting Liquidity Profile (Top 5 Levels)",
-        xaxis_title="Book Depth Level",
-        yaxis_title="Mean Resting Quantity",
-        barmode="group",
-        height=390,
-        margin=dict(l=50, r=30, t=55, b=45),
+    _apply_terminal_layout(
+        fig, "Mean Level-2 Resting Liquidity Profile (Top 5 Levels)", height=380, barmode="group"
     )
+    fig.update_xaxes(title_text="Book Depth Level")
+    fig.update_yaxes(title_text="Mean Resting Quantity")
     return fig
 
 
@@ -259,7 +348,7 @@ def build_sweeps_figures(sweeps_df: pl.DataFrame) -> tuple[go.Figure, go.Figure,
             y=inst["inst_slippage_bps"].to_list(),
             name="Total Slippage (bps)",
             mode="lines+markers",
-            line=dict(color="#ffd54f", width=2.5),
+            line=dict(color="#facc15", width=2.5),
         )
     )
     fig_inst.add_trace(
@@ -267,7 +356,7 @@ def build_sweeps_figures(sweeps_df: pl.DataFrame) -> tuple[go.Figure, go.Figure,
             x=inst["sweep_value"].to_list(),
             y=inst["inst_permanent_impact_bps"].to_list(),
             name="Permanent Impact (bps)",
-            marker_color="#42a5f5",
+            marker_color="#38bdf8",
         )
     )
     fig_inst.add_trace(
@@ -275,17 +364,17 @@ def build_sweeps_figures(sweeps_df: pl.DataFrame) -> tuple[go.Figure, go.Figure,
             x=inst["sweep_value"].to_list(),
             y=inst["inst_temporary_impact_bps"].to_list(),
             name="Temporary Impact (bps)",
-            marker_color="#ffa726",
+            marker_color="#fb923c",
         )
     )
-    fig_inst.update_layout(
-        template="plotly_dark",
-        title="Sweep 1: Institutional Parent Order Size vs. Slippage & Impact",
-        xaxis_title="Total Parent Quantity (shares)",
-        yaxis_title="Basis Points (bps)",
-        barmode="group",
+    _apply_terminal_layout(
+        fig_inst,
+        "Sweep 1: Institutional Parent Order Size vs. Slippage & Impact",
         height=390,
+        barmode="group",
     )
+    fig_inst.update_xaxes(title_text="Total Parent Quantity (shares)")
+    fig_inst.update_yaxes(title_text="Basis Points (bps)")
 
     spread_df = sweeps_df.filter(pl.col("experiment") == "market_maker_spread").sort("sweep_value")
     fig_spread = make_subplots(specs=[[{"secondary_y": True}]])
@@ -294,7 +383,7 @@ def build_sweeps_figures(sweeps_df: pl.DataFrame) -> tuple[go.Figure, go.Figure,
             x=spread_df["sweep_value"].to_list(),
             y=spread_df["mean_spread_bps"].to_list(),
             name="Mean Spread (bps)",
-            marker_color="#ab47bc",
+            marker_color="#c084fc",
         ),
         secondary_y=False,
     )
@@ -304,16 +393,14 @@ def build_sweeps_figures(sweeps_df: pl.DataFrame) -> tuple[go.Figure, go.Figure,
             y=spread_df["total_volume"].to_list(),
             name="Total Volume",
             mode="lines+markers",
-            line=dict(color="#26c6da", width=2.5),
+            line=dict(color="#22d3ee", width=2.5),
         ),
         secondary_y=True,
     )
-    fig_spread.update_layout(
-        template="plotly_dark",
-        title="Sweep 2: Market Maker Half-Spread vs. Effective Spread & Volume",
-        xaxis_title="MM Half-Spread (ticks)",
-        height=390,
+    _apply_terminal_layout(
+        fig_spread, "Sweep 2: Market Maker Half-Spread vs. Effective Spread & Volume", height=390
     )
+    fig_spread.update_xaxes(title_text="MM Half-Spread (ticks)")
     fig_spread.update_yaxes(title_text="Mean Spread (bps)", secondary_y=False)
     fig_spread.update_yaxes(title_text="Total Traded Volume", secondary_y=True)
 
@@ -325,7 +412,7 @@ def build_sweeps_figures(sweeps_df: pl.DataFrame) -> tuple[go.Figure, go.Figure,
             y=mom_df["realized_volatility_bps"].to_list(),
             name="Realized Volatility (bps)",
             mode="lines+markers",
-            line=dict(color="#ff7043", width=2.5),
+            line=dict(color="#f97316", width=2.5),
         ),
         secondary_y=False,
     )
@@ -335,16 +422,14 @@ def build_sweeps_figures(sweeps_df: pl.DataFrame) -> tuple[go.Figure, go.Figure,
             y=mom_df["mean_spread_bps"].to_list(),
             name="Mean Spread (bps)",
             mode="lines+markers",
-            line=dict(color="#9ccc65", width=2.5, dash="dash"),
+            line=dict(color="#4ade80", width=2.5, dash="dash"),
         ),
         secondary_y=True,
     )
-    fig_mom.update_layout(
-        template="plotly_dark",
-        title="Sweep 3: Momentum Trader Participation vs. Volatility & Spread",
-        xaxis_title="Momentum Traders (count)",
-        height=390,
+    _apply_terminal_layout(
+        fig_mom, "Sweep 3: Momentum Trader Participation vs. Volatility & Spread", height=390
     )
+    fig_mom.update_xaxes(title_text="Momentum Traders (count)")
     fig_mom.update_yaxes(title_text="Realized Volatility (bps)", secondary_y=False)
     fig_mom.update_yaxes(title_text="Mean Spread (bps)", secondary_y=True)
 
@@ -371,7 +456,7 @@ def build_benchmarks_figure(bench_df: pl.DataFrame) -> go.Figure:
             x=workloads,
             y=stl["throughput_mops"].to_list(),
             name="STL Throughput (M/s)",
-            marker_color="#78909c",
+            marker_color="#64748b",
         ),
         row=1,
         col=1,
@@ -382,7 +467,7 @@ def build_benchmarks_figure(bench_df: pl.DataFrame) -> go.Figure:
             x=workloads,
             y=fast["throughput_mops"].to_list(),
             name="FlatOrderBook Throughput (M/s)",
-            marker_color="#26c6da",
+            marker_color="#22d3ee",
         ),
         row=1,
         col=1,
@@ -396,7 +481,7 @@ def build_benchmarks_figure(bench_df: pl.DataFrame) -> go.Figure:
             mode="lines+markers+text",
             text=[f"{val:.2f}x" for val in fast["speedup"].to_list()],
             textposition="top center",
-            line=dict(color="#ffd54f", width=2.5),
+            line=dict(color="#facc15", width=2.5),
         ),
         row=1,
         col=1,
@@ -404,7 +489,7 @@ def build_benchmarks_figure(bench_df: pl.DataFrame) -> go.Figure:
     )
 
     fig.add_trace(
-        go.Bar(x=workloads, y=stl["P50_ns"].to_list(), name="STL P50 (ns)", marker_color="#90a4ae"),
+        go.Bar(x=workloads, y=stl["P50_ns"].to_list(), name="STL P50 (ns)", marker_color="#94a3b8"),
         row=1,
         col=2,
     )
@@ -413,7 +498,7 @@ def build_benchmarks_figure(bench_df: pl.DataFrame) -> go.Figure:
             x=workloads,
             y=fast["P50_ns"].to_list(),
             name="FlatOrderBook P50 (ns)",
-            marker_color="#00e676",
+            marker_color="#10b981",
         ),
         row=1,
         col=2,
@@ -423,17 +508,17 @@ def build_benchmarks_figure(bench_df: pl.DataFrame) -> go.Figure:
             x=workloads,
             y=fast["P99_ns"].to_list(),
             name="FlatOrderBook P99 (ns)",
-            marker_color="#ffa726",
+            marker_color="#fb923c",
         ),
         row=1,
         col=2,
     )
 
-    fig.update_layout(
-        template="plotly_dark",
-        title="Google Benchmark Engine Performance (STL Baseline vs. FlatOrderBook + ObjectPool)",
-        barmode="group",
+    _apply_terminal_layout(
+        fig,
+        "Google Benchmark Engine Performance (STL Baseline vs. FlatOrderBook + ObjectPool)",
         height=440,
+        barmode="group",
     )
     fig.update_yaxes(title_text="Throughput (M ops/sec)", row=1, col=1, secondary_y=False)
     fig.update_yaxes(title_text="Speedup (x)", row=1, col=1, secondary_y=True)
@@ -473,38 +558,57 @@ def render_app() -> None:
         page_title="Martingale Exchange — Live Microstructure Simulator",
         layout="wide",
     )
-    st.title("Martingale Exchange — Live C++20 Market Microstructure Simulator")
-    st.caption(
-        "Deterministic C++20 Price-Time Priority Matching Engine · "
-        "Polars & Plotly Quantitative Research UI"
-    )
+    st.markdown(_TERMINAL_CSS, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.header("Simulation Parameters")
+        st.markdown("### Simulation Controls")
         with st.form("simulation_params"):
-            seed = st.number_input("PRNG Seed", min_value=1, max_value=999_999, value=2026, step=1)
-            steps = st.slider("Simulation Steps", min_value=100, max_value=1500, value=500, step=50)
+            c_seed, c_steps = st.columns(2)
+            with c_seed:
+                seed = st.number_input("Seed", min_value=1, max_value=999_999, value=2026, step=1)
+            with c_steps:
+                steps = st.number_input(
+                    "Steps", min_value=100, max_value=1500, value=500, step=50
+                )
 
-            st.subheader("Market Maker")
-            mm_half_spread = st.slider("Half-Spread (ticks)", min_value=1, max_value=6, value=2)
-            mm_skew_divisor = st.slider(
-                "Inventory Skew Divisor", min_value=10, max_value=200, value=50, step=10
-            )
+            st.form_submit_button("Run Simulation", type="primary", use_container_width=True)
 
-            st.subheader("Order Flow Agents")
+            st.caption("Order Flow Agents")
             random_traders = st.slider("Random Traders", min_value=1, max_value=10, value=5)
             momentum_traders = st.slider("Momentum Traders", min_value=0, max_value=8, value=2)
 
-            st.subheader("Institutional Parent Order")
+            st.caption("Institutional Parent Order")
             inst_side = st.selectbox("Execution Side", options=["BUY", "SELL"], index=0)
             inst_qty = st.slider(
-                "Parent Order Qty (0 = disabled)", min_value=0, max_value=2000, value=500, step=50
-            )
-            inst_slice = st.slider(
-                "Child Slice Qty", min_value=10, max_value=200, value=50, step=10
+                "Parent Qty (0 = disabled)", min_value=0, max_value=2000, value=500, step=50
             )
 
-            st.form_submit_button("Run Simulation", type="primary", use_container_width=True)
+            with st.expander("Market Maker & Slice Tuning", expanded=False):
+                mm_half_spread = st.slider("MM Half-Spread (ticks)", min_value=1, max_value=6, value=2)
+                mm_skew_divisor = st.slider(
+                    "Inventory Skew Divisor", min_value=10, max_value=200, value=50, step=10
+                )
+                inst_slice = st.slider(
+                    "Child Slice Qty", min_value=10, max_value=200, value=50, step=10
+                )
+
+    st.markdown(
+        f"""
+        <div class="mtgl-header">
+            <div>
+                <h1 class="mtgl-title">Martingale Exchange</h1>
+                <p class="mtgl-subtitle">Deterministic C++20 Price-Time Priority Matching Engine · Polars &amp; Plotly Terminal</p>
+            </div>
+            <div class="mtgl-badges">
+                <span class="mtgl-badge">C++20 Engine</span>
+                <span class="mtgl-badge">Seed {int(seed)}</span>
+                <span class="mtgl-badge">{int(steps)} steps</span>
+                <span class="mtgl-badge">1 ms/step</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     tab_live, tab_sweeps, tab_bench = st.tabs(
         [
@@ -531,29 +635,57 @@ def render_app() -> None:
             st.error(f"Unable to run live simulation: {exc}")
         else:
             row = summary_df.row(0, named=True)
-            k1, k2, k3, k4, k5, k6, k7 = st.columns(7)
-            k1.metric("Mean Spread (bps)", f"{row['mean_spread_bps']:.2f}")
-            k2.metric("Session VWAP", f"{row['vwap']:.2f}")
-            k3.metric("Realized Vol (bps)", f"{row['realized_volatility_bps']:.2f}")
-            k4.metric("Trades", f"{int(row['trade_count']):,}")
-            k5.metric("Total Volume", f"{int(row['total_volume']):,}")
+            k1, k2, k3, k4 = st.columns(4)
+            k1.metric(
+                "Mean Spread",
+                f"{row['mean_spread_bps']:.2f} bps",
+                delta=f"RVol {row['realized_volatility_bps']:.2f} bps",
+                delta_color="off",
+            )
+            k2.metric(
+                "Session VWAP",
+                f"{row['vwap']:,.2f}",
+                delta="Trade-weighted mid",
+                delta_color="off",
+            )
+            k3.metric(
+                "Order Flow",
+                f"{int(row['trade_count']):,} trades",
+                delta=f"{int(row['total_volume']):,} vol",
+                delta_color="off",
+            )
             if int(row["inst_executed_qty"]) > 0:
-                k6.metric("Inst Slippage (bps)", f"{row['inst_slippage_bps']:.2f}")
-                k7.metric(
-                    "Perm / Temp (bps)",
-                    f"{row['inst_permanent_impact_bps']:.1f} / "
-                    f"{row['inst_temporary_impact_bps']:.1f}",
+                k4.metric(
+                    "Inst. Slippage",
+                    f"{row['inst_slippage_bps']:.2f} bps",
+                    delta=(
+                        f"Perm {row['inst_permanent_impact_bps']:.1f} · "
+                        f"Temp {row['inst_temporary_impact_bps']:.1f} bps"
+                    ),
+                    delta_color="off",
                 )
             else:
-                k6.metric("Inst Slippage (bps)", "Disabled")
-                k7.metric("Perm / Temp (bps)", "0.0 / 0.0")
+                k4.metric(
+                    "Inst. Slippage",
+                    "Disabled" if int(inst_qty) == 0 else "0 fills",
+                    delta="Institutional order",
+                    delta_color="off",
+                )
 
-            st.plotly_chart(build_price_tape_figure(steps_df, trades_df), use_container_width=True)
+            st.plotly_chart(
+                build_price_tape_figure(steps_df, trades_df),
+                theme=None,
+                use_container_width=True,
+            )
             col_left, col_right = st.columns(2)
             with col_left:
-                st.plotly_chart(build_spread_obi_figure(steps_df), use_container_width=True)
+                st.plotly_chart(
+                    build_spread_obi_figure(steps_df), theme=None, use_container_width=True
+                )
             with col_right:
-                st.plotly_chart(build_l2_depth_figure(l2_profile), use_container_width=True)
+                st.plotly_chart(
+                    build_l2_depth_figure(l2_profile), theme=None, use_container_width=True
+                )
 
             with st.expander("View Raw Polars Summary & Trade Tape Sample"):
                 st.dataframe(summary_df.to_pandas(), use_container_width=True)
@@ -566,12 +698,12 @@ def render_app() -> None:
         if sweeps_path.exists():
             sweeps_df = prebaked_pipeline.load_experiment_sweeps()
             fig_inst, fig_spread, fig_mom = build_sweeps_figures(sweeps_df)
-            st.plotly_chart(fig_inst, use_container_width=True)
+            st.plotly_chart(fig_inst, theme=None, use_container_width=True)
             c1, c2 = st.columns(2)
             with c1:
-                st.plotly_chart(fig_spread, use_container_width=True)
+                st.plotly_chart(fig_spread, theme=None, use_container_width=True)
             with c2:
-                st.plotly_chart(fig_mom, use_container_width=True)
+                st.plotly_chart(fig_mom, theme=None, use_container_width=True)
             st.dataframe(sweeps_df.to_pandas(), use_container_width=True)
         else:
             st.info(f"Pre-computed sweep file not found at {sweeps_path}.")
@@ -580,7 +712,9 @@ def render_app() -> None:
         bench_path = DEFAULT_DATA_DIR / "benchmarks.json"
         if bench_path.exists():
             bench_df = prebaked_pipeline.load_benchmarks()
-            st.plotly_chart(build_benchmarks_figure(bench_df), use_container_width=True)
+            st.plotly_chart(
+                build_benchmarks_figure(bench_df), theme=None, use_container_width=True
+            )
             st.dataframe(bench_df.to_pandas(), use_container_width=True)
         else:
             st.info(f"Benchmark JSON file not found at {bench_path}.")

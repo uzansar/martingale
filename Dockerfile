@@ -47,6 +47,7 @@ RUN pip install --no-cache-dir -r python/requirements.txt
 
 COPY --from=builder /app/bin/martingale_experiments /app/bin/martingale_experiments
 COPY --from=builder /app/data/processed /app/data/processed
+COPY .streamlit ./.streamlit
 COPY python ./python
 
 ENV MARTINGALE_EXPERIMENTS_BIN=/app/bin/martingale_experiments \
