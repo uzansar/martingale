@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: martingale-exchange
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /_stcore/health
+    autoDeploy: true
+    envVars:
+      - key: MARTINGALE_EXPERIMENTS_BIN
+        value: /app/bin/martingale_experiments
+      - key: MARTINGALE_DATA_DIR
+        value: /app/data/processed

@@ -15,6 +15,14 @@ DATA_DIR = PROJECT_ROOT / "data" / "processed"
 if str(PYTHON_DIR) not in sys.path:
     sys.path.insert(0, str(PYTHON_DIR))
 
+from app import (  # noqa: E402
+    build_benchmarks_figure,
+    build_l2_depth_figure,
+    build_price_tape_figure,
+    build_spread_obi_figure,
+    build_sweeps_figures,
+    run_live_simulation,
+)
 from dashboard import create_dashboard_figure, export_dashboard_html  # noqa: E402
 from data_pipeline import MartingaleDataPipeline  # noqa: E402
 
@@ -95,3 +103,40 @@ def test_plotly_dashboard_builds_and_exports_html(
     content = exported.read_text(encoding="utf-8")
     assert "Martingale Exchange" in content
     assert len(content) > 10_000
+
+
+def test_streamlit_app_figure_builders_and_single_run_subprocess(
+    pipeline: MartingaleDataPipeline,
+) -> None:
+    steps = pipeline.load_steps()
+    trades = pipeline.load_trades()
+    l2_profile = pipeline.summarize_l2_depth_profile()
+    sweeps = pipeline.load_experiment_sweeps()
+    bench = pipeline.load_benchmarks()
+
+    assert len(build_price_tape_figure(steps, trades).data) >= 5
+    assert len(build_spread_obi_figure(steps).data) == 2
+    assert len(build_l2_depth_figure(l2_profile).data) == 2
+    fig_inst, fig_spread, fig_mom = build_sweeps_figures(sweeps)
+    assert len(fig_inst.data) == 3
+    assert len(fig_spread.data) == 2
+    assert len(fig_mom.data) == 2
+    assert len(build_benchmarks_figure(bench).data) >= 5
+
+    live_steps, live_trades, live_l2, live_summary = run_live_simulation(
+        {
+            "seed": 314,
+            "steps": 150,
+            "mm_half_spread": 2,
+            "mm_skew_divisor": 50,
+            "random_traders": 4,
+            "momentum_traders": 2,
+            "inst_side": "SELL",
+            "inst_qty": 300,
+            "inst_slice": 30,
+        }
+    )
+    assert live_steps.height == 150
+    assert live_trades.height > 20
+    assert live_l2.height == 5
+    assert live_summary.height == 1

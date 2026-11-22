@@ -6,7 +6,7 @@
 [![Build System: CMake + Ninja](https://img.shields.io/badge/Build-CMake%20%2B%20Ninja-green.svg)](https://cmake.org/)
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://www.kernel.org/)
 
-> **Progress:** **6 / 6 Milestones Completed** (`#1`–`#24` closed) · **`64 / 64` GoogleTest suites** passing under GCC 15 (`-O3`) and Clang 21 (`Debug + ASan/UBSan`) · **`4 / 4` `pytest` dashboard checks** passing · Zero-warning **Doxygen 1.15** docs · Explore the **[Project Wiki](https://github.com/uzansar/martingale/wiki)**.
+> **Progress:** **6 / 6 Milestones Completed** (`#1`–`#24` closed) · **`64 / 64` GoogleTest suites** passing under GCC 15 (`-O3`) and Clang 21 (`Debug + ASan/UBSan`) · **`5 / 5` `pytest` dashboard & web checks** passing · Zero-warning **Doxygen 1.15** docs · Explore the **[Project Wiki](https://github.com/uzansar/martingale/wiki)**.
 
 ---
 
@@ -105,11 +105,13 @@ martingale-exchange/
 │       ├── research/     # MicrostructureAnalyzer metrics & CSV exporters
 │       └── simulator/    # Seeded MarketSimulator & synthetic trading agents
 ├── src/
-│   └── run_experiments.cpp # CLI running parameter sweeps & exporting CSV datasets
+│   └── run_experiments.cpp # CLI running parameter sweeps & parameterized --single-run simulations
 ├── tests/                # GoogleTest suite (64 tests across unit, replay, sim & stress)
 ├── benchmarks/           # Google Benchmark suites (STL baseline vs. FastMatchingEngine)
-├── python/               # Polars pipeline (data_pipeline.py), Plotly dashboard & pytest suite
+├── python/               # Polars pipeline (data_pipeline.py), Plotly dashboard, Streamlit app (app.py) & pytest
 ├── docs/                 # ADR-001..006, benchmark reports & microstructure findings
+├── Dockerfile            # Multi-stage C++20 builder + Python 3.12 Streamlit runtime container
+├── render.yaml           # Render cloud blueprint for one-click Docker web deployment
 ├── Doxyfile              # Zero-warning Doxygen HTML documentation configuration
 └── CMakeLists.txt        # Root CMake configuration (C++20, GCC/Clang, ASan/UBSan)
 ```
@@ -155,12 +157,30 @@ doxygen Doxyfile
 
 ---
 
+## Live Interactive Web App & Cloud Deployment
+
+Launch an interactive web simulator (`python/app.py`) powered live by the compiled C++20 matching engine (`martingale_experiments --single-run`), `Polars`, and `Plotly`:
+
+```bash
+# Run locally with Streamlit (invokes native C++ binary, or WSL2 automatically on Windows)
+.venv/bin/python -m streamlit run python/app.py
+
+# Or build and run the standalone multi-stage Docker container
+docker build -t martingale-exchange .
+docker run -p 8501:8501 martingale-exchange
+```
+
+- **One-Click Cloud Deploy (Render):** Connect the repository to **Render** as a Blueprint using `render.yaml` (`runtime: docker`, `plan: free`, `healthCheckPath: /_stcore/health`, `autoDeploy: true`).
+- **Portable Container:** Because the `Dockerfile` binds `0.0.0.0:${PORT:-8501}`, the same image deploys directly to **Fly.io**, **Railway**, or **Google Cloud Run** with zero code changes.
+
+---
+
 ## Technology Stack
 
 - **Core Systems:** C++20, CMake, Ninja, GCC 15 / Clang 21 (Linux)
-- **Testing & Verification:** GoogleTest (`64/64` tests), CTest, AddressSanitizer (ASan), UndefinedBehaviorSanitizer (UBSan), `pytest` (`4/4` tests), GitHub Actions CI
+- **Testing & Verification:** GoogleTest (`64/64` tests), CTest, AddressSanitizer (ASan), UndefinedBehaviorSanitizer (UBSan), `pytest` (`5/5` tests), GitHub Actions CI
 - **Performance & Profiling:** Google Benchmark, Valgrind (`callgrind`), Heaptrack, `perf stat`
-- **Quantitative Analytics & Visualisation:** `MicrostructureAnalyzer` (C++20 CSV exports), Python 3 (`Polars`, `NumPy`, `Plotly`), Doxygen `1.15`
+- **Quantitative Analytics, Web & Docs:** `MicrostructureAnalyzer` (C++20 CSV exports), Python 3 (`Polars`, `NumPy`, `Plotly`, `Streamlit`), Docker, Render (`render.yaml`), Doxygen `1.15`
 
 ---
 
